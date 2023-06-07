@@ -14,6 +14,8 @@ typedef struct s_philosopher
 	int	time_to_sleep;	//from args
 	int *fork_left; // number of fork = philosopher's [i]
 	int *fork_right; // number of fork = philosopher's [i]-1
+	pthread_mutex_t *left_fork_mutex;
+	pthread_mutex_t *right_fork_mutex;
 	long long start_time;
 	int	i_am_finished; //
 
@@ -29,6 +31,7 @@ typedef struct s_data
 	int number_of_eat_times; 	//required number of eat cycles for all philos
 	int number_of_eated_philos; // кол во накормленных философоф 
 	int	*fork;
+	pthread_mutex_t *fork_mutexes;
 	t_philosopher *philosopher;
 
 }	t_data;
@@ -64,14 +67,7 @@ long long get_current_time()
 // void* routine_of_philo(t_philosopher *philolosopher)
 void* routine_of_philo(void	*arg)
 {	
-	pthread_mutex_t left_fork;
-	pthread_mutex_t right_fork;
-
-	pthread_mutex_init(&left_fork, NULL);
-	pthread_mutex_init(&right_fork, NULL);
-	
 	int i = 0;
-
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
 	while (1)
@@ -82,10 +78,10 @@ void* routine_of_philo(void	*arg)
 			break;
 		}
 		if((*philo->fork_left == 1) && (*philo->fork_right == 1))
-		{	
-			pthread_mutex_lock(&left_fork);
-			pthread_mutex_lock(&right_fork);	
-
+		{	printf("555555\n");
+			printf("LEFT LOCK %d\n", pthread_mutex_lock(philo->left_fork_mutex));			
+			printf("RIGHT LOCK %d\n",pthread_mutex_lock(philo->right_fork_mutex));
+			
 			*philo->fork_left = 0;
 			*philo->fork_right = 0;
 			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
@@ -95,8 +91,10 @@ void* routine_of_philo(void	*arg)
 			usleep(1000*(philo->time_to_eat));
 			*philo->fork_left = 1;
 			*philo->fork_right = 1;
-			pthread_mutex_unlock(&left_fork);	
-			pthread_mutex_unlock(&right_fork);	
+
+			printf("LEFT UNLOCK %d\n", pthread_mutex_unlock(philo->left_fork_mutex));
+			printf("RIGHT UNLOCK %d\n", pthread_mutex_unlock(philo->right_fork_mutex));
+			
 			philo->my_number_of_eat_times++;
 			//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
 			printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
@@ -159,8 +157,10 @@ int start_threads(t_data *data)
 
 	while (i < data->num_of_philosophers)
 	{			
-		//printf("i = %d\n", i);
+		printf("i = %d\n", i);
 		pthread_create(&threads[i], NULL, routine_of_philo, &data->philosopher[i]);
+		//sleep (1);
+		
 		//pthread_join(threads[i], NULL);
 		i++;
 	}
@@ -196,38 +196,52 @@ int create_philosophers(t_data *data)
 	return(0);
 }
 
+
+
+
 /* if data->fork[i] = 1, the fork[i] is free. If 0 it's busy*/
 int create_forks(t_data *data)
 {	int i = 0;
-
+	
 	data->fork = malloc(sizeof(int)*(data->num_of_philosophers));
+	data->fork_mutexes = malloc(sizeof(pthread_mutex_t)*(data->num_of_philosophers));
+	
 	while (i < data->num_of_philosophers)
 	{
-		data->fork[i] = 1; //1 -means the fork is available;
+		data->fork[i] = 1; //1 -means the fork is available;		
+		pthread_mutex_init(&data->fork_mutexes[i], NULL); // - creates mutex for each fork;
 		i++;
 	}
 	i = 0;
+	
 	while (i < data->num_of_philosophers)
 	{
 		if(i == 0)
-		{
+		{	//printf("id left fork: %d\n", i);
 			data->philosopher[i].fork_left = &data->fork[i];
+			data->philosopher[i].left_fork_mutex = &data->fork_mutexes[i];
+			//printf("id right fork: %d\n", data->num_of_philosophers-1);
 			data->philosopher[i].fork_right = &data->fork[data->num_of_philosophers-1];
+			data->philosopher[i].right_fork_mutex = &data->fork_mutexes[data->num_of_philosophers-1];
 		}
 		else
-		{
+		{	//printf("id fork: %d\n", i);
 			data->philosopher[i].fork_left = &data->fork[i];
+			data->philosopher[i].left_fork_mutex = &data->fork_mutexes[i];
+			//printf("id right fork: %d\n", i-1);
 			data->philosopher[i].fork_right = &data->fork[i-1];
+			data->philosopher[i].right_fork_mutex = &data->fork_mutexes[i-1];
+
 		}
 		 //printf("fork in data  %d = %d\n", i, data->fork[i]);
 		//printf("i'm %d left fork  = %d\n", i, *data->philosopher[i].fork_left);
 		//printf("i'm %d right fork = %d\n", i, *data->philosopher[i].fork_right);
 
 		i++;
-	}
-
+	}	
 	return(0);
 }
+
 
 int main(int ac, char	**av)
 {	
@@ -239,7 +253,6 @@ int main(int ac, char	**av)
 	create_philosophers(&data);
 	create_forks(&data);
 	start_threads(&data);
-
 
 	return(0);
 }
