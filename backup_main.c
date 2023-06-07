@@ -6,7 +6,7 @@ typedef struct s_philosopher
 {
 	int p_id;	//my number. Start number is 1
 	int thread_id;
-	long long my_last_dinner;	//timestamp of my last dinner
+	int	my_last_dinner;	//timestamp of my last dinner
 	int my_number_of_eat_times;	// ho many times i already ate
 	int number_of_eat_times; //required
 	int is_i_alive; //1 if I alive
@@ -15,19 +15,17 @@ typedef struct s_philosopher
 	int *fork_left; // number of fork = philosopher's [i]
 	int *fork_right; // number of fork = philosopher's [i]-1
 	long long start_time;
-	int	i_am_finished; //
 
 }	t_philosopher;
 
 
 typedef struct s_data
 {
-	int num_of_philosophers; // qty of philos
+	int num_of_philosophers;
 	int	time_to_die;
 	int	time_to_eat;
 	int	time_to_sleep;
-	int number_of_eat_times; 	//required number of eat cycles for all philos
-	int number_of_eated_philos; // кол во накормленных философоф 
+	int number_of_eat_times;
 	int	*fork;
 	t_philosopher *philosopher;
 
@@ -38,10 +36,9 @@ typedef struct s_data
 int process_arguments(t_data *data, char **av)
 {	
 	data->num_of_philosophers = ft_atoi(av[1]);
-	data->time_to_die = ft_atoi(av[2]);
-	data->time_to_eat = ft_atoi(av[3]);
-	data->time_to_sleep = ft_atoi(av[4]);
-	data->number_of_eated_philos = 0;
+	data->time_to_die = 1000 * (ft_atoi(av[2]));
+	data->time_to_eat = 1000 * (ft_atoi(av[3]));
+	data->time_to_sleep = 1000 * (ft_atoi(av[4]));
 	if (av[5])
 	{
 		data->number_of_eat_times = ft_atoi(av[5]);
@@ -49,8 +46,7 @@ int process_arguments(t_data *data, char **av)
 	return(0);
 }
 
-//++++++++++++++++++++++++++++++++++TIME++++++++++++++++++++++++++++++++//
-
+/***********************TIME**********************/
 long long get_current_time()	
 {
 	struct timeval tv;
@@ -59,6 +55,8 @@ long long get_current_time()
     //printf("Текущее время : %lld\n", milliseconds/1000);
     return (current_time);
 }
+
+
 /***************************************************************************/
 
 // void* routine_of_philo(t_philosopher *philolosopher)
@@ -69,112 +67,70 @@ void* routine_of_philo(void	*arg)
 
 	pthread_mutex_init(&left_fork, NULL);
 	pthread_mutex_init(&right_fork, NULL);
+
 	
 	int i = 0;
+	// for(int j = 0; j < 5; j++)
+	// 	printf("again my id %d\n", philosopher[j].p_id);
 
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
-	while (1)
-	{	
-		if (philo->my_number_of_eat_times == philo->number_of_eat_times)
-		{	
-			philo->i_am_finished = 1;
-			break;
-		}
+	while (i < philo->number_of_eat_times)
+	{			
+		// printf("FORK left %d\n", *philo->fork_left);
+		// printf("FORK RIGHT %d\n", *philo->fork_right);
 		if((*philo->fork_left == 1) && (*philo->fork_right == 1))
 		{	
 			pthread_mutex_lock(&left_fork);
 			pthread_mutex_lock(&right_fork);	
 
-			*philo->fork_left = 0;
-			*philo->fork_right = 0;
-			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
-			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
+			*philo->fork_left = 0;	
+			*philo->fork_right = 0;	
+			printf("%lld %d has taken a left fork\n", (get_current_time()-philo->start_time), philo->p_id);
+			printf("%lld %d has taken a right fork\n", (get_current_time()-philo->start_time), philo->p_id);
 			printf("%lld %d is eating\n", (get_current_time()-philo->start_time), philo->p_id);
 			philo->my_last_dinner = get_current_time();
-			usleep(1000*(philo->time_to_eat));
+			usleep(philo->time_to_eat);
 			*philo->fork_left = 1;
 			*philo->fork_right = 1;
 			pthread_mutex_unlock(&left_fork);	
 			pthread_mutex_unlock(&right_fork);	
-			philo->my_number_of_eat_times++;
-			//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
+
 			printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
 			usleep(philo->time_to_sleep);
 			printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
-		}
+		}	
 		i++;
 	}
 	return(0);
 }
- 
-/*********************CHECKER****************************/
-/*********************CHECKER****************************/
-void* checker_routine(void	*arg)
-{
-	t_data *data = (t_data	*)arg;
-	
-	int i = 0;
-	while(1)
-	{	
-		if(data->number_of_eated_philos == data->num_of_philosophers)
-		{	printf("all philos have been eaten\n");
-			return(0);
-		}
-		i = 0;
-		while(i < data->num_of_philosophers)
-		{	printf("current: %lld\n", get_current_time());
-			printf("LAST_DINNER: %lld\n", data->philosopher[i].my_last_dinner);
-			printf("data->time_to_die: %d\n", data->time_to_die);
-			sleep(1);
-
-			if(((data->philosopher[i].my_last_dinner) - (get_current_time()) > (data->time_to_die)))
-			{
-				printf("%d died\n", i+1);
-				return(0);
-			}
-			//printf("%d !data->philosopher.my_number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].my_number_of_eat_times);
-			//printf("%d !data->philosopher.number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].number_of_eat_times);
-			if(data->philosopher[i].i_am_finished == 1)
-			{	
-				data->philosopher[i].i_am_finished = 0;
-				data->number_of_eated_philos++;
-			}
-			i++;
-		}
-	}
-	return(0);
-}
 
 
+int create_one_thread
 
 int start_threads(t_data *data)
 {
 	int i = 0;
 	pthread_t *threads = malloc(sizeof(pthread_t)*(data->num_of_philosophers));	
-	pthread_t check_status;
-	// pthread_t death_status;
-	pthread_create(&check_status, NULL, checker_routine, data);
-	// pthread_create(&death_status, NULL, death_checker, data);
-
+	printf("qty = %d\n", data->num_of_philosophers);
 	while (i < data->num_of_philosophers)
-	{			
+	{	
 		//printf("i = %d\n", i);
 		pthread_create(&threads[i], NULL, routine_of_philo, &data->philosopher[i]);
 		//pthread_join(threads[i], NULL);
 		i++;
 	}
-	// int j = 0;
-	// while (j < data->num_of_philosophers)
-	// {	
-	// 	pthread_join(threads[j], NULL);
-	// 	j++;
-	// }	
-	pthread_join(check_status, NULL);
-	 return(0);
+	int j = 0;
+	while (j < data->num_of_philosophers)
+	{	
+		pthread_join(threads[j], NULL);
+		j++;
+	}
+	return(0);
 }
 
 
+/***************************************************************************/
 /***************************************************************************/
 /***************************************************************************/
 int create_philosophers(t_data *data)
