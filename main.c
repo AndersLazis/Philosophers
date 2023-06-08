@@ -68,7 +68,6 @@ long long get_current_time()
 
 void* routine_of_philo(void	*arg)
 {	
-	int i = 0;
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
 	while (1)
@@ -80,31 +79,37 @@ void* routine_of_philo(void	*arg)
 		}
 		if((*philo->fork_left == 1) && (*philo->fork_right == 1))
 		{	
-			pthread_mutex_lock(philo->left_fork_mutex);
-			printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);	
-			pthread_mutex_lock(philo->right_fork_mutex);
-			printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 
-			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
-			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
-			printf("%lld %d is eating\n", (get_current_time()-philo->start_time), philo->p_id);
-			philo->my_last_dinner = get_current_time();
-			usleep(1000*(philo->time_to_eat));
-			*philo->fork_left = 1;
-			*philo->fork_right = 1;
+			if((pthread_mutex_lock(philo->left_fork_mutex) == 0) && (pthread_mutex_lock(philo->right_fork_mutex) == 0))
+			{	//pthread_mutex_lock(philo->left_fork_mutex);
+				printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);	
+				//pthread_mutex_lock(philo->right_fork_mutex);
+				printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 
-			pthread_mutex_unlock(philo->left_fork_mutex);
-			printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
-			pthread_mutex_unlock(philo->right_fork_mutex);
-			printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				*philo->fork_left = 0;
+				*philo->fork_right = 0;
+
+				printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
+				printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
+				printf("%lld %d is eating\n", (get_current_time()-philo->start_time), philo->p_id);
+				philo->my_last_dinner = get_current_time();
+				usleep(1000*(philo->time_to_eat));
+				*philo->fork_left = 1;
+				*philo->fork_right = 1;
+
+				pthread_mutex_unlock(philo->left_fork_mutex);
+				printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				pthread_mutex_unlock(philo->right_fork_mutex);
+				printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				
+				philo->my_number_of_eat_times++;
+				//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
+				printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
+				usleep(philo->time_to_sleep);
+			}
 			
-			philo->my_number_of_eat_times++;
-			//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
-			printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
-			usleep(philo->time_to_sleep);
-			printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 		}
-		i++;
+		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 	}
 	return(0);
 }
@@ -113,7 +118,6 @@ void* routine_of_philo(void	*arg)
 // для четных философов
 void* routine_of_philo2(void	*arg)
 {	
-	int i = 0;
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
 	usleep(10000);
@@ -124,36 +128,38 @@ void* routine_of_philo2(void	*arg)
 			philo->i_am_finished = 1;
 			break;
 		}
+		// if((*philo->fork_left == 1) && (*philo->fork_right == 1))
+		// {	
+							
 		if((*philo->fork_left == 1) && (*philo->fork_right == 1))
-		{	
-			printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);					
-			
-			pthread_mutex_lock(philo->left_fork_mutex);
-			printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);	
-			pthread_mutex_lock(philo->right_fork_mutex);
-			printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
-			
-			*philo->fork_left = 0;
-			*philo->fork_right = 0;
-			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
-			printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
-			printf("%lld %d is eating\n", (get_current_time()-philo->start_time), philo->p_id);
-			philo->my_last_dinner = get_current_time();
-			usleep(1000*(philo->time_to_eat));
-			*philo->fork_left = 1;
-			*philo->fork_right = 1;
-			
-			pthread_mutex_unlock(philo->left_fork_mutex);
-			printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
-			pthread_mutex_unlock(philo->right_fork_mutex);
-			printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
-			
-			philo->my_number_of_eat_times++;
-			//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
-			printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
-			usleep(philo->time_to_sleep);			
+		{
+			if((pthread_mutex_lock(philo->left_fork_mutex) == 0) && (pthread_mutex_lock(philo->right_fork_mutex) == 0))
+			{		
+				printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);				
+				printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				
+				*philo->fork_left = 0;
+				*philo->fork_right = 0;
+				printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
+				printf("%lld %d has taken a fork\n", (get_current_time()-philo->start_time), philo->p_id);
+				printf("%lld %d is eating\n", (get_current_time()-philo->start_time), philo->p_id);
+				philo->my_last_dinner = get_current_time();
+				usleep(1000*(philo->time_to_eat));
+				*philo->fork_left = 1;
+				*philo->fork_right = 1;
+
+				pthread_mutex_unlock(philo->left_fork_mutex);
+				printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				pthread_mutex_unlock(philo->right_fork_mutex);
+				printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				
+				philo->my_number_of_eat_times++;
+				//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
+				printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
+				usleep(philo->time_to_sleep);	
+			}
 		}
-		i++;
+		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 	}
 	return(0);
 }
