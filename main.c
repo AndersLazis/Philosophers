@@ -70,21 +70,22 @@ void* routine_of_philo(void	*arg)
 {	
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
+	philo->my_last_dinner = get_current_time();
+	//printf("%lld %d my_last_dinner", (get_current_time()-philo->start_time), philo->p_id);
 	while (1)
 	{	
+		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 		if (philo->my_number_of_eat_times == philo->number_of_eat_times)
 		{	
 			philo->i_am_finished = 1;
 			break;
 		}
-		if((*philo->fork_left == 1) && (*philo->fork_right == 1))
-		{	
-
+			
 			if((pthread_mutex_lock(philo->left_fork_mutex) == 0) && (pthread_mutex_lock(philo->right_fork_mutex) == 0))
 			{	//pthread_mutex_lock(philo->left_fork_mutex);
-				printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);	
+				//printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);	
 				//pthread_mutex_lock(philo->right_fork_mutex);
-				printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				//printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 
 				*philo->fork_left = 0;
 				*philo->fork_right = 0;
@@ -98,18 +99,16 @@ void* routine_of_philo(void	*arg)
 				*philo->fork_right = 1;
 
 				pthread_mutex_unlock(philo->left_fork_mutex);
-				printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				//printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				pthread_mutex_unlock(philo->right_fork_mutex);
-				printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				//printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				
 				philo->my_number_of_eat_times++;
 				//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
+				//printf("%d SLEEEP TIME\n", philo->time_to_sleep);
 				printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
-				usleep(philo->time_to_sleep);
-			}
-			
-		}
-		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
+				usleep(1000*(philo->time_to_sleep));
+			}	
 	}
 	return(0);
 }
@@ -120,9 +119,12 @@ void* routine_of_philo2(void	*arg)
 {	
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
-	usleep(10000);
+	philo->my_last_dinner = get_current_time();
+	//usleep(5000);
+	//printf("%lld %d my_last_dinner", (get_current_time()-philo->start_time), philo->p_id);
 	while (1)
 	{	
+		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 		if (philo->my_number_of_eat_times == philo->number_of_eat_times)
 		{	
 			philo->i_am_finished = 1;
@@ -131,12 +133,11 @@ void* routine_of_philo2(void	*arg)
 		// if((*philo->fork_left == 1) && (*philo->fork_right == 1))
 		// {	
 							
-		if((*philo->fork_left == 1) && (*philo->fork_right == 1))
-		{
+			
 			if((pthread_mutex_lock(philo->left_fork_mutex) == 0) && (pthread_mutex_lock(philo->right_fork_mutex) == 0))
 			{		
-				printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);				
-				printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				//printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);				
+				//printf("%lld %d RIGHT LOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				
 				*philo->fork_left = 0;
 				*philo->fork_right = 0;
@@ -149,21 +150,20 @@ void* routine_of_philo2(void	*arg)
 				*philo->fork_right = 1;
 
 				pthread_mutex_unlock(philo->left_fork_mutex);
-				printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				//printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				pthread_mutex_unlock(philo->right_fork_mutex);
-				printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
+				//printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				
+
 				philo->my_number_of_eat_times++;
 				//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
 				printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
-				usleep(philo->time_to_sleep);	
+				usleep(1000*(philo->time_to_sleep));
 			}
-		}
-		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 	}
 	return(0);
 }
- 
+
 
 
 
@@ -176,6 +176,9 @@ void* checker_routine(void	*arg)
 	t_data *data = (t_data	*)arg;
 	
 	int i = 0;
+	printf("11current: %lld\n", get_current_time());
+	printf("11data->time_to_die: %d\n", data->time_to_die);
+	
 	while(1)
 	{	
 		if(data->number_of_eated_philos == data->num_of_philosophers)
@@ -184,16 +187,18 @@ void* checker_routine(void	*arg)
 		}
 		i = 0;
 		while(i < data->num_of_philosophers)
-		{	//printf("current: %lld\n", get_current_time());
-			//printf("LAST_DINNER: %lld\n", data->philosopher[i].my_last_dinner);
-			// printf("data->time_to_die: %d\n", data->time_to_die);
-			sleep(1);
+		{	
+			//printf("current: %lld\n", get_current_time());
+			//printf("%d LAST_DINNER: %lld\n", i+1, data->philosopher[i].my_last_dinner);
+			//printf("data->time_to_die: %d\n", data->time_to_die);
+			//sleep(1);
 
-			if(((data->philosopher[i].my_last_dinner) - (get_current_time()) > (data->time_to_die)))
+			if(((get_current_time()) - (data->philosopher[i].my_last_dinner)) > (data->time_to_die))
 			{
-				printf("%d died\n", i+1);
-				return(0);
+				printf("%lld %dth died\n",(get_current_time()-data->philosopher[i].start_time), i+1);
+				exit(0);
 			}
+			//usleep(300000);
 			//printf("%d !data->philosopher.my_number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].my_number_of_eat_times);
 			//printf("%d !data->philosopher.number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].number_of_eat_times);
 			if(data->philosopher[i].i_am_finished == 1)
@@ -217,7 +222,6 @@ int start_threads(t_data *data)
 	// pthread_t death_status;
 	pthread_create(&check_status, NULL, checker_routine, data);
 	// pthread_create(&death_status, NULL, death_checker, data);
-
 	while (i < data->num_of_philosophers)
 	{	
 		if(i%2 != 0)
