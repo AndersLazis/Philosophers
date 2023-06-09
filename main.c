@@ -120,7 +120,7 @@ void* routine_of_philo2(void	*arg)
 	t_philosopher *philo = (t_philosopher	*)arg;
 	philo->start_time = get_current_time();
 	philo->my_last_dinner = get_current_time();
-	usleep(500);
+	usleep(3000);
 	//printf("%lld %d my_last_dinner", (get_current_time()-philo->start_time), philo->p_id);
 	while (1)
 	{	
@@ -176,8 +176,8 @@ void* checker_routine(void	*arg)
 	t_data *data = (t_data	*)arg;
 	
 	int i = 0;
-	printf("11current: %lld\n", get_current_time());
-	printf("11data->time_to_die: %d\n", data->time_to_die);
+	//printf("11current: %lld\n", get_current_time());
+	usleep(9000);
 	
 	while(1)
 	{	
@@ -196,6 +196,11 @@ void* checker_routine(void	*arg)
 			if(((get_current_time()) - (data->philosopher[i].my_last_dinner)) > (data->time_to_die))
 			{
 				printf("%lld %dth died\n",(get_current_time()-data->philosopher[i].start_time), i+1);
+				printf("current time at death moment: %lld\n", get_current_time());
+				printf("%lld %d my_last_dinner\n",(data->philosopher[i].my_last_dinner), i+1);
+				printf("11data->time_to_die: %d\n", data->time_to_die);
+				printf("difference: %lld\n", ((get_current_time()) - (data->philosopher[i].my_last_dinner)));
+
 				printf("%d has been eaten %d times\n", i+1, data->philosopher[i].my_number_of_eat_times);
 				printf("data->number_of_eated_philos %d\n", data->number_of_eated_philos);
 				exit(0);
