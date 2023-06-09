@@ -2,6 +2,7 @@
 
 /*program parameters*/
 
+
 typedef struct s_philosopher
 {
 	int p_id;	//my number. Start number is 1
@@ -37,6 +38,26 @@ typedef struct s_data
 }	t_data;
 
 
+int error_exit(t_data *data)
+{
+	free(data->fork);
+	free(data->fork_mutexes);
+	free(data->philosopher);
+	printf("Error: arguments are invalid\n");
+	return(0);
+}
+
+int normal_exit(t_data *data)
+{
+	//free(data->fork);
+	//free(data->fork_mutexes);
+	//free(data->philosopher);
+	return(0);
+}
+
+
+
+
 int	arg_is_num(char *av)
 {	
 	int	i;
@@ -60,20 +81,23 @@ int process_arguments(t_data *data, char **av)
 	if((arg_is_num(av[1]) == 0) || (arg_is_num(av[2]) == 0) || (arg_is_num(av[3]) == 0) || (arg_is_num(av[4]) == 0))
 	{
 		printf("Error: arguments are invalid\n");
-		exit(0);
+		return(1);
 	}
 	if (av[5])
 	{
 		if(arg_is_num(av[5]) == 0)
 		{
 			printf("Error: arguments are invalid\n");
-			exit(0);
+			return(1);
 		}
 		else
 		{
 			data->number_of_eat_times = ft_atoi(av[5]);
 			if(ft_atoi(av[5]) == 0)
-				exit(0);
+				{
+					printf("Error: arguments are invalid\n");
+					return(1);
+				}
 		}
 	}
 	else
@@ -87,7 +111,7 @@ int process_arguments(t_data *data, char **av)
 	if(data->num_of_philosophers <= 0 || data->time_to_die <= 0 || data->time_to_eat < 0 || data->time_to_sleep < 0)
 	{
 		printf("Error: arguments are invalid\n");
-		exit(0);
+		return(1);
 	}
 
 
@@ -247,7 +271,8 @@ void* checker_routine(void	*arg)
 
 			//	printf("%d has been eaten %d times\n", i+1, data->philosopher[i].my_number_of_eat_times);
 				//printf("data->number_of_eated_philos %d\n", data->number_of_eated_philos);
-				exit(0);
+				
+				return(0);
 			}
 			//usleep(300000);
 			//printf("%d !data->philosopher.my_number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].my_number_of_eat_times);
@@ -290,6 +315,7 @@ int start_threads(t_data *data)
 	// 	j++;
 	// }	
 	pthread_join(check_status, NULL);
+	free(threads);
 	 return(0);
 }
 
@@ -368,10 +394,15 @@ int main(int ac, char	**av)
 	if (ac != 5 && ac != 6)
 		return(0);
 	//printf("%lld\n", init_time());
-	process_arguments(&data, av);
+	if((process_arguments(&data, av)) == 1)
+		return(0);
 	create_philosophers(&data);
 	create_forks(&data);
 	start_threads(&data);
 
+	// free(&data.fork);
+	// free(&data.fork_mutexes);
+	// free(&data.philosopher);
+	// free(&data);
 	return(0);
 }
