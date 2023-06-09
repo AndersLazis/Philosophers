@@ -37,18 +37,62 @@ typedef struct s_data
 }	t_data;
 
 
+int	arg_is_num(char *av)
+{	
+	int	i;
+	i = 0;
+	while(av[i] != '\0')
+	{
+		if ((av[i] > 47 && av[i] < 58) || av[i] == '+')
+			i++;
+		else
+		{ 
+			return (0);
+		}
+	}
+	return(1);
+}
+
 /*writes args to data struct*/
 int process_arguments(t_data *data, char **av)
 {	
+	//printf("res:%s\n", arg_is_num(av[1]));
+	if((arg_is_num(av[1]) == 0) || (arg_is_num(av[2]) == 0) || (arg_is_num(av[3]) == 0) || (arg_is_num(av[4]) == 0))
+	{
+		printf("Error: arguments are invalid\n");
+		exit(0);
+	}
+	if (av[5])
+	{
+		if(arg_is_num(av[5]) == 0)
+		{
+			printf("Error: arguments are invalid\n");
+			exit(0);
+		}
+		else
+		{
+			data->number_of_eat_times = ft_atoi(av[5]);
+			if(ft_atoi(av[5]) == 0)
+				exit(0);
+		}
+	}
+	else
+		data->number_of_eat_times = INT_MAX;
+
 	data->num_of_philosophers = ft_atoi(av[1]);
 	data->time_to_die = ft_atoi(av[2]);
 	data->time_to_eat = ft_atoi(av[3]);
 	data->time_to_sleep = ft_atoi(av[4]);
-	data->number_of_eated_philos = 0;
-	if (av[5])
+
+	if(data->num_of_philosophers <= 0 || data->time_to_die <= 0 || data->time_to_eat < 0 || data->time_to_sleep < 0)
 	{
-		data->number_of_eat_times = ft_atoi(av[5]);
+		printf("Error: arguments are invalid\n");
+		exit(0);
 	}
+
+
+	data->number_of_eated_philos = 0;	
+
 	return(0);
 }
 
@@ -195,14 +239,14 @@ void* checker_routine(void	*arg)
 
 			if(((get_current_time()) - (data->philosopher[i].my_last_dinner)) > (data->time_to_die))
 			{
-				printf("%lld %dth died\n",(get_current_time()-data->philosopher[i].start_time), i+1);
-				printf("current time at death moment: %lld\n", get_current_time());
-				printf("%lld %d my_last_dinner\n",(data->philosopher[i].my_last_dinner), i+1);
-				printf("11data->time_to_die: %d\n", data->time_to_die);
-				printf("difference: %lld\n", ((get_current_time()) - (data->philosopher[i].my_last_dinner)));
+				printf("%lld %d died\n",(get_current_time()-data->philosopher[i].start_time), i+1);
+				//printf("current time at death moment: %lld\n", get_current_time());
+				//printf("%lld %d my_last_dinner\n",(data->philosopher[i].my_last_dinner), i+1);
+				//printf("11data->time_to_die: %d\n", data->time_to_die);
+				//printf("difference: %lld\n", ((get_current_time()) - (data->philosopher[i].my_last_dinner)));
 
-				printf("%d has been eaten %d times\n", i+1, data->philosopher[i].my_number_of_eat_times);
-				printf("data->number_of_eated_philos %d\n", data->number_of_eated_philos);
+			//	printf("%d has been eaten %d times\n", i+1, data->philosopher[i].my_number_of_eat_times);
+				//printf("data->number_of_eated_philos %d\n", data->number_of_eated_philos);
 				exit(0);
 			}
 			//usleep(300000);
@@ -320,7 +364,7 @@ int create_forks(t_data *data)
 
 int main(int ac, char	**av)
 {	
-	t_data data;
+	t_data data;	
 	if (ac != 5 && ac != 6)
 		return(0);
 	//printf("%lld\n", init_time());
