@@ -19,6 +19,8 @@ typedef struct s_philosopher
 	pthread_mutex_t *right_fork_mutex;
 	long long start_time;
 	int	i_am_finished; //
+	pthread_mutex_t philo_own_mutex;
+	pthread_mutex_t *data_mutex;
 
 }	t_philosopher;
 
@@ -34,6 +36,7 @@ typedef struct s_data
 	int	*fork;
 	pthread_mutex_t *fork_mutexes;
 	t_philosopher *philosopher;
+	pthread_mutex_t data_mutex; //доп мутекс 
 
 }	t_data;
 
@@ -137,18 +140,21 @@ long long get_current_time()
 void* routine_of_philo(void	*arg)
 {	
 	t_philosopher *philo = (t_philosopher	*)arg;
+	pthread_mutex_lock(&philo->philo_own_mutex);
 	philo->start_time = get_current_time();
 	philo->my_last_dinner = get_current_time();
+	pthread_mutex_unlock(&philo->philo_own_mutex);
 	//printf("%lld %d my_last_dinner", (get_current_time()-philo->start_time), philo->p_id);
 	while (1)
 	{	
+		pthread_mutex_lock(&philo->philo_own_mutex);
 		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 		if (philo->my_number_of_eat_times == philo->number_of_eat_times)
 		{	
 			philo->i_am_finished = 1;
 			break;
 		}
-			
+			pthread_mutex_unlock(&philo->philo_own_mutex);
 			if((pthread_mutex_lock(philo->left_fork_mutex) == 0) && (pthread_mutex_lock(philo->right_fork_mutex) == 0))
 			{	//pthread_mutex_lock(philo->left_fork_mutex);
 				//printf("%lld %d LEFT LOCK \n", (get_current_time()-philo->start_time), philo->p_id);	
@@ -170,12 +176,17 @@ void* routine_of_philo(void	*arg)
 				//printf("%lld %d LEFT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				pthread_mutex_unlock(philo->right_fork_mutex);
 				//printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
-				
+
+				pthread_mutex_lock(&philo->philo_own_mutex);
 				philo->my_number_of_eat_times++;
+				pthread_mutex_unlock(&philo->philo_own_mutex);
+
 				//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
 				//printf("%d SLEEEP TIME\n", philo->time_to_sleep);
+				pthread_mutex_lock(&philo->philo_own_mutex);
 				printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
 				usleep(1000*(philo->time_to_sleep));
+				pthread_mutex_unlock(&philo->philo_own_mutex);
 			}	
 	}
 	return(0);
@@ -186,18 +197,22 @@ void* routine_of_philo(void	*arg)
 void* routine_of_philo2(void	*arg)
 {	
 	t_philosopher *philo = (t_philosopher	*)arg;
+	pthread_mutex_lock(&philo->philo_own_mutex);
 	philo->start_time = get_current_time();
 	philo->my_last_dinner = get_current_time();
 	usleep(3000);
+	pthread_mutex_unlock(&philo->philo_own_mutex);
 	//printf("%lld %d my_last_dinner", (get_current_time()-philo->start_time), philo->p_id);
 	while (1)
 	{	
+		pthread_mutex_lock(&philo->philo_own_mutex);
 		printf("%lld %d is thinking\n", (get_current_time()-philo->start_time), philo->p_id);
 		if (philo->my_number_of_eat_times == philo->number_of_eat_times)
 		{	
 			philo->i_am_finished = 1;
 			break;
 		}
+		pthread_mutex_unlock(&philo->philo_own_mutex);;
 		// if((*philo->fork_left == 1) && (*philo->fork_right == 1))
 		// {	
 							
@@ -223,10 +238,14 @@ void* routine_of_philo2(void	*arg)
 				//printf("%lld %d RIGHT UNLOCK\n", (get_current_time()-philo->start_time), philo->p_id);
 				
 
+				pthread_mutex_lock(&philo->philo_own_mutex);
 				philo->my_number_of_eat_times++;
+				pthread_mutex_unlock(&philo->philo_own_mutex);
+				pthread_mutex_lock(&philo->philo_own_mutex);
 				//printf("%d philo->my_number_of_eat_times++:%d\n", philo->p_id, philo->my_number_of_eat_times);
 				printf("%lld %d is sleeping\n", (get_current_time()-philo->start_time), philo->p_id);
 				usleep(1000*(philo->time_to_sleep));
+				pthread_mutex_unlock(&philo->philo_own_mutex);
 			}
 	}
 	return(0);
@@ -242,47 +261,39 @@ void* routine_of_philo2(void	*arg)
 void* checker_routine(void	*arg)
 {
 	t_data *data = (t_data	*)arg;
-	
 	int i = 0;
-	//printf("11current: %lld\n", get_current_time());
 	usleep(9000);
 	
 	while(1)
 	{	
+		pthread_mutex_lock(&data->data_mutex);
 		if((data->number_of_eated_philos == data->num_of_philosophers -1) && (data->num_of_philosophers != 1))
 		{	printf("all philos have been eaten\n");
+			pthread_mutex_destroy(data->fork_mutexes);
+			pthread_mutex_destroy(&data->data_mutex);
+			pthread_mutex_unlock(&data->data_mutex);
 			return(0);
 		}
+		pthread_mutex_unlock(&data->data_mutex);
 		i = 0;
 		while(i < data->num_of_philosophers)
 		{	
-			//printf("current: %lld\n", get_current_time());
-			//printf("%d LAST_DINNER: %lld\n", i+1, data->philosopher[i].my_last_dinner);
-			//printf("data->time_to_die: %d\n", data->time_to_die);
-			//sleep(1);
-
+			pthread_mutex_lock(&data->data_mutex);
 			if(((get_current_time()) - (data->philosopher[i].my_last_dinner)) > (data->time_to_die))
-			{
+			{	
 				printf("%lld %d died\n",(get_current_time()-data->philosopher[i].start_time), i+1);
-				//printf("current time at death moment: %lld\n", get_current_time());
-				//printf("%lld %d my_last_dinner\n",(data->philosopher[i].my_last_dinner), i+1);
-				//printf("11data->time_to_die: %d\n", data->time_to_die);
-				//printf("difference: %lld\n", ((get_current_time()) - (data->philosopher[i].my_last_dinner)));
-
-			//	printf("%d has been eaten %d times\n", i+1, data->philosopher[i].my_number_of_eat_times);
-				//printf("data->number_of_eated_philos %d\n", data->number_of_eated_philos);
-				
+				pthread_mutex_unlock(&data->data_mutex);			
 				return(0);
 			}
-			//usleep(300000);
-			//printf("%d !data->philosopher.my_number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].my_number_of_eat_times);
-			//printf("%d !data->philosopher.number_of_eat_times:%d\n", data->philosopher[i].p_id, data->philosopher[i].number_of_eat_times);
+
+			pthread_mutex_lock(&data->data_mutex);
 			if(data->philosopher[i].i_am_finished == 1)
-			{	
+			{					
 				data->philosopher[i].i_am_finished = 0;
-				data->number_of_eated_philos++;
+				data->number_of_eated_philos++;				
 			}
-			i++;
+			pthread_mutex_unlock(&data->data_mutex);
+			i++;			
 		}
 	}
 	return(0);
@@ -295,17 +306,21 @@ int start_threads(t_data *data)
 	int i = 0;
 	pthread_t *threads = malloc(sizeof(pthread_t)*(data->num_of_philosophers));	
 	pthread_t check_status;
+	pthread_mutex_init(&data->data_mutex, NULL);
 	// pthread_t death_status;
 	pthread_create(&check_status, NULL, checker_routine, data);
 	// pthread_create(&death_status, NULL, death_checker, data);
 	while (i < data->num_of_philosophers)
 	{	
+		data->philosopher[i].data_mutex = &data->data_mutex;
+		pthread_mutex_init(&data->philosopher[i].philo_own_mutex, NULL);
 		if(i%2 != 0)
 			pthread_create(&threads[i], NULL, routine_of_philo2, &data->philosopher[i]);
 		//printf("i = %d\n", i);
 		if(i%2 == 0)
 			pthread_create(&threads[i], NULL, routine_of_philo, &data->philosopher[i]);
 		//sleep (1);
+
 		i++;
 	}
 	// int j = 0;
