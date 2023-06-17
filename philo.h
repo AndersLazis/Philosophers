@@ -8,6 +8,7 @@
 # include <stdlib.h>
 # include <sys/time.h>
 
+typedef struct s_philosopher	t_philosopher;
 
 int	ft_atoi(const char *str)
 {
@@ -36,7 +37,6 @@ int	ft_atoi(const char *str)
 	return (res * sign);
 }
 
-typedef struct s_philosopher	t_philosopher;
 
 typedef struct s_data
 {
@@ -49,6 +49,10 @@ typedef struct s_data
 	t_philosopher **philosophers;
 	pthread_mutex_t	*forks;
 	long long time_start_sim;
+	pthread_t monitoring_thread;
+	int flag_stop_sim;
+	pthread_mutex_t	stdout_lock;
+	pthread_mutex_t	flag_stop_sim_lock;
 
 
 }	t_data;
@@ -62,7 +66,8 @@ typedef struct s_philosopher
 	pthread_mutex_t	dinner_counter_lock;
 	int	fork_left;
 	int fork_right;
-
+	pthread_t	philo_thread;
+	long long last_dinner;
 
 	
 }	t_philosopher;

@@ -271,6 +271,7 @@ t_philosopher	**init_philos(t_data *data)
 		philosophers[i]->data = data;
 		philosophers[i]->id = i;
 		philosophers[i]->eated_dinners = 0;
+		philosophers[i]->my_number_of_eat_times = 0;
 		if(pthread_mutex_init(&philosophers[i]->dinner_counter_lock, NULL) != 0)
 			return(NULL);
 		i++;
@@ -318,6 +319,7 @@ t_data	*init_data(int ac, char	**av)
 	data->time_to_die = ft_atoi(av[2]);
 	data->time_to_eat = ft_atoi(av[3]);
 	data->time_to_sleep = ft_atoi(av[4]);
+	data->flag_stop_sim = 0;
 	if (ac == 6)
 		data->req_number_of_eat = ft_atoi(av[5]);
 	else
@@ -329,6 +331,8 @@ t_data	*init_data(int ac, char	**av)
 		return(NULL);
 	data->forks = create_forks(data);
 	if(!data->forks)
+		return(NULL);
+	if(pthread_mutex_init(&data->flag_stop_sim_lock, NULL) != 0)
 		return(NULL);
 	return(data);
 }
@@ -348,21 +352,122 @@ int free_data(t_data *data)
 	return(0);
 }
 
+
+long long get_real_time(void)
+{
+	struct timeval	current_time;
+
+	gettimeofday(&current_time, NULL);
+	return((current_time.tv_sec * 1000) + (current_time.tv_usec / 1000));
+}
+
+int is_sim_stop(t_data	*data)
+{	
+	pthread_mutex_lock(&data->flag_stop_sim_lock);
+	if(data->flag_stop_sim == 1)
+	{	pthread_mutex_unlock(&data->flag_stop_sim_lock);
+		return(1);
+	}
+	pthread_mutex_unlock(&data->flag_stop_sim_lock);
+	return(0);
+}
+
+void	eat_sleep_think_routine(t_philosopher	*philosopher)
+{	//printf(" I AM %d MY FORKS ARE %d AND %d\n", philosopher->id, philosopher->fork_left, philosopher->fork_right);
+	if (((pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_left])) == 0) &&  (pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_right])) == 0)
+	{	
+		printf("%lld %d has taken a fork\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+		printf("%lld %d has taken a fork\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+		printf("%lld %d is eating\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+		usleep((philosopher->data->time_to_eat)*1000);
+		pthread_mutex_unlock(&philosopher->data->forks[philosopher->fork_right]);
+		pthread_mutex_unlock(&philosopher->data->forks[philosopher->fork_left]);
+
+		pthread_mutex_lock(&philosopher->dinner_counter_lock);
+		philosopher->my_number_of_eat_times++;
+		pthread_mutex_unlock(&philosopher->dinner_counter_lock);
+
+		printf("%lld %d is sleeping\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+		usleep((philosopher->data->time_to_sleep)*1000);
+	}
+	// pthread_mutex_lock(&philosopher->data->flag_stop_sim_lock);
+	// philosopher->data->flag_stop_sim = 1;
+	// pthread_mutex_unlock(&philosopher->data->flag_stop_sim_lock);
+	printf("%lld %d is thinking\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+}
+
+
+void	*philo_routine(void *philo)
+{
+	t_philosopher *philosopher;
+	philosopher = (t_philosopher *)philo;
+	philosopher->last_dinner = philosopher->data->time_start_sim;
+	printf("%lld %d is thinking\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+	if(philosopher->id % 2 != 0)
+		usleep((philosopher->data->time_to_eat/2)*1000);
+	while(is_sim_stop(philosopher->data) == 0)
+	{	
+		if(philosopher->data->req_number_of_eat > philosopher->my_number_of_eat_times)
+			eat_sleep_think_routine(philosopher);
+		else
+			return(NULL);
+	}
+
+	return(NULL);
+}
+
+
+void	*monitoring_routine(void	*data)
+{
+	return (NULL);
+
+
+}
+
+
+
+
+
 int start_simulation(t_data *data)
 {	
 	int i;
 	
 	i = 0;
-	data->time_start_sim = get_real_time() + (data->num_of_philosophers * 2);
-	
+	data->time_start_sim = get_real_time();
+	while(i < data->num_of_philosophers)
+	{
+		if(pthread_create(&data->philosophers[i]->philo_thread, NULL, &philo_routine, data->philosophers[i]) != 0)
+			return (0);
+		i++;
+	}
+	if(pthread_create(&data->monitoring_thread, NULL, &monitoring_routine, data) != 0)
+		return (0);
 
-
-
+ return (1);
 }
+
+int	stop_simulation(t_data *data)
+{
+	int	i;
+
+	i = 0;
+	while (i < data->num_of_philosophers)
+	{
+		if(pthread_join(data->philosophers[i]->philo_thread, NULL) != 0)
+			return (0);
+		i++;
+	}
+	if(pthread_join(data->monitoring_thread, NULL) != 0)
+			return (0);
+	return (1);
+}
+
+
+
 
 int main(int ac, char	**av)
 {	
-	printf("==============lokl===============\n==============lokl===============\n==============lokl===============\n");
+	printf("==============ok===============\n==============ok===============\n==============ok===============\n");
 	int i = 0;
 	t_data *data;
 		
@@ -372,8 +477,9 @@ int main(int ac, char	**av)
 		return(1);
 	if(!start_simulation(data))
 		return (1);
-	// start_threads(&data);
-	// stop_simulation(&data);
+
+	if(!stop_simulation(data))
+		return (1);
 	free_data(data);
 	return(0);
 }
