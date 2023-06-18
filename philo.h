@@ -71,7 +71,7 @@ typedef struct s_philosopher
 	pthread_t	philo_thread;
 	long long last_dinner;
 	int	dead;
-
+	pthread_mutex_t	meal_count_lock;
 	
 }	t_philosopher;
 
