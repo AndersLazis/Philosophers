@@ -45,7 +45,7 @@ typedef struct s_data
 	int	time_to_eat; 
 	int	time_to_sleep; 
 	int req_number_of_eat; 
-	int number_of_eated_philos; 
+	int number_of_eated_philos;  //--
 	t_philosopher **philosophers;
 	pthread_mutex_t	*forks;
 	long long time_start_sim;
@@ -53,7 +53,7 @@ typedef struct s_data
 	int flag_stop_sim;
 	pthread_mutex_t	stdout_lock;
 	pthread_mutex_t	flag_stop_sim_lock;
-
+	pthread_mutex_t	dinner_counter_lock;
 
 }	t_data;
 
@@ -62,17 +62,17 @@ typedef struct s_philosopher
 	int id;	
 	t_data *data;
 	int my_number_of_eat_times;
-	int eated_dinners;
-	pthread_mutex_t	dinner_counter_lock;
+	int eated_dinners; //--	
 	int	fork_left;
 	int fork_right;
 	pthread_t	philo_thread;
 	long long last_dinner;
+	int	dead;
 
 	
 }	t_philosopher;
 
-
+int	stop_simulation(t_data *data);
 // void	destroy_mutexes(t_data *data)
 // {
 // 	unsigned int	i;
