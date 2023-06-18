@@ -54,6 +54,9 @@ typedef struct s_data
 	pthread_mutex_t	stdout_lock;
 	pthread_mutex_t	flag_stop_sim_lock;
 	pthread_mutex_t	dinner_counter_lock;
+	pthread_mutex_t	dead_check_lock;
+	int one_dead;
+	pthread_t dead_check_thread;
 
 }	t_data;
 

@@ -69,6 +69,7 @@ t_data	*init_data(int ac, char	**av)
 	data->time_to_eat = ft_atoi(av[3]);
 	data->time_to_sleep = ft_atoi(av[4]);
 	data->flag_stop_sim = 0;
+	data->one_dead = 0;
 	if (ac == 6)
 	{
 		data->req_number_of_eat = ft_atoi(av[5]);
@@ -87,6 +88,8 @@ t_data	*init_data(int ac, char	**av)
 		return(NULL);
 	if(pthread_mutex_init(&data->flag_stop_sim_lock, NULL) != 0)
 		return(NULL);
+	if(pthread_mutex_init(&data->dead_check_lock, NULL) != 0)
+		return(NULL);	
 	return(data);
 }
 
@@ -125,26 +128,30 @@ int is_sim_stop(t_data	*data)
 	return(0);
 }
 
-int am_i_dead (t_philosopher	*philosopher)
-{
-	if ((get_real_time() - (philosopher->last_dinner)) > (philosopher->data->time_to_die))
-	{
-		printf("%lld %d died\n", (get_real_time() - philosopher->data->time_start_sim), philosopher->id);
-		pthread_mutex_lock(&philosopher->data->flag_stop_sim_lock);
-		philosopher->data->flag_stop_sim = 1;
-		pthread_mutex_unlock(&philosopher->data->flag_stop_sim_lock);
-		return (1);
-	}
-	return (0);	
-}
+// int am_i_dead (t_philosopher	*philosopher)
+// {
+// 	if ((get_real_time() - (philosopher->last_dinner)) > (philosopher->data->time_to_die))
+// 	{
+// 		printf("%lld %d died\n", (get_real_time() - philosopher->data->time_start_sim), philosopher->id);
+// 		pthread_mutex_lock(&philosopher->data->flag_stop_sim_lock);
+// 		philosopher->data->flag_stop_sim = 1;
+// 		pthread_mutex_unlock(&philosopher->data->flag_stop_sim_lock);
+// 		return (1);
+// 	}
+// 	return (0);	
+// }
 
 
 void	*eat_sleep_think_routine(t_philosopher	*philosopher)
 {	
-	// if(am_i_dead(philosopher) == 1 || (philosopher->data->flag_stop_sim == 1))
-	// 	return (NULL);
-	
-
+	if(get_real_time() - (philosopher->last_dinner) > (philosopher->data->time_to_die))
+	{	
+		printf("%lld %d died\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
+		pthread_mutex_lock(&philosopher->data->dead_check_lock);
+	 	philosopher->data->one_dead = 1;
+		pthread_mutex_unlock(&philosopher->data->dead_check_lock);
+		return(NULL);
+	}
 
 	if (((pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_left])) == 0) &&  (pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_right])) == 0)
 	{	
@@ -183,13 +190,12 @@ void	*philo_routine(void *philo)
 {
 	t_philosopher *philosopher;
 	philosopher = (t_philosopher *)philo;
-	philosopher->last_dinner = philosopher->data->time_start_sim;
 	printf("%lld %d is thinking\n", (get_real_time() - philosopher->data->time_start_sim), (philosopher->id));
 	if(philosopher->id % 2 != 0)
 		usleep((philosopher->data->time_to_eat/2)*1000);
 	else
 		usleep(10000);
-	while(philosopher->my_number_of_eat_times > 0)
+	while(philosopher->my_number_of_eat_times > 0 && philosopher->data->one_dead == 0)
 	{	
 			if(philosopher->data->flag_stop_sim == 0)
 				eat_sleep_think_routine(philosopher);
@@ -236,6 +242,41 @@ void	*monitoring_routine(void	*input_data)
 	return (NULL);
 }
 
+
+void	*dead_check_routine(void	*input_data)
+{
+	t_data *data;
+	data = (t_data*)input_data;
+	printf("HHHHHHHEY!!!!!!!!\n");
+	usleep(1000);
+	while(1)
+	{	
+		pthread_mutex_lock(&data->flag_stop_sim_lock);
+		if(data->flag_stop_sim == 1)
+		{	
+			return(NULL);
+		}
+		pthread_mutex_unlock(&data->flag_stop_sim_lock);
+
+
+		pthread_mutex_lock(&data->dead_check_lock);
+		if(data->one_dead == 1)
+		{	
+			pthread_mutex_lock(&data->flag_stop_sim_lock);
+			//data->flag_stop_sim = 1;
+			pthread_mutex_unlock(&data->flag_stop_sim_lock);
+
+
+			pthread_mutex_unlock(&data->dead_check_lock);
+			stop_simulation(data);
+			return(NULL);
+		}
+		pthread_mutex_unlock(&data->dead_check_lock);	
+	}
+		return (NULL);
+}
+
+
 int start_simulation(t_data *data)
 {	
 	int i;
@@ -249,10 +290,14 @@ int start_simulation(t_data *data)
 		i++;
 	}
 	if(pthread_create(&data->monitoring_thread, NULL, &monitoring_routine, data) != 0)
+		return (0);	
+
+	if(pthread_create(&data->dead_check_thread, NULL, &dead_check_routine, data) != 0)
 		return (0);
 	pthread_join(data->monitoring_thread, NULL);
+	pthread_join(data->dead_check_thread, NULL);
 
- return (1);
+ 	return (1);
 }
 
 int	stop_simulation(t_data *data)
