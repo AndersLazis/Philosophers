@@ -187,6 +187,18 @@ void	eat_sleep_think_routine(t_philosopher	*philosopher)
 		alarm_clock_loop(philosopher->data, philosopher->data->time_to_sleep);
 }
 
+void	*one_philo_routine(t_philosopher	*philosopher)
+{	
+	
+		pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_right]);
+		write_status(philosopher, 0, FORK_2);
+		alarm_clock_loop(philosopher->data, philosopher->data->time_to_die);
+		write_status(philosopher, 0, DIED);
+		pthread_mutex_unlock(&philosopher->data->forks[philosopher->fork_right]);	
+		return(NULL);
+}
+
+
 
 void	delay(long long start_time)
 {
@@ -242,8 +254,7 @@ void	*philo_routine(void *philo)
 	if (philosopher->data->time_to_die == 0)
 		return (NULL);
 	if(philosopher->data->num_of_philosophers == 1)
-		return(NULL);
-	// 1 - philo case;
+		return(one_philo_routine(philosopher));
 	if (philosopher->id % 2)
 		think_time_calc(philosopher, 1);
 
