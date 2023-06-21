@@ -8,6 +8,10 @@
 # include <stdlib.h>
 # include <sys/time.h>
 
+
+
+
+
 typedef struct s_philosopher	t_philosopher;
 
 int	ft_atoi(const char *str)
@@ -44,8 +48,7 @@ typedef struct s_data
 	int	time_to_die; 
 	int	time_to_eat; 
 	int	time_to_sleep; 
-	int req_number_of_eat; 
-	int number_of_eated_philos;  //--
+	int req_eat_count;
 	t_philosopher **philosophers;
 	pthread_mutex_t	*forks;
 	long long time_start_sim;
@@ -53,10 +56,6 @@ typedef struct s_data
 	int flag_stop_sim;
 	pthread_mutex_t	stdout_lock;
 	pthread_mutex_t	flag_stop_sim_lock;
-	pthread_mutex_t	dinner_counter_lock;
-	pthread_mutex_t	dead_check_lock;
-	int one_dead;
-	pthread_t dead_check_thread;
 
 }	t_data;
 
@@ -64,8 +63,8 @@ typedef struct s_philosopher
 {
 	int id;	
 	t_data *data;
-	int my_number_of_eat_times;
-	int eated_dinners; //--	
+
+	int eated_dinners; //
 	int	fork_left;
 	int fork_right;
 	pthread_t	philo_thread;
@@ -76,17 +75,38 @@ typedef struct s_philosopher
 }	t_philosopher;
 
 int	stop_simulation(t_data *data);
-// void	destroy_mutexes(t_data *data)
-// {
-// 	unsigned int	i;
+void	alarm_clock_loop(t_data *data, int sleep_time);
+static void	print_status(t_philosopher *philo, char *str);
+void	write_status(t_philosopher *philo, int supervisor_flag, int status);
 
-// 	i = 0;
-// 	while (i < data->num_of_philosophers)
-// 	{
-// 		pthread_mutex_destroy(data->philosopher[i].left_fork_mutex);
-// 		i++;
-// 	}
-// 	pthread_mutex_destroy(&data->data_mutex);
-// }
+
+
+// MACROS
+
+# define PROG_NAME	"philo"
+# define ERROR_ARGS	"%s invalid input: enter a string of digits only \
+./philo <num_of_philos> \
+<time_to_die> <time_to_eat> <time_to_sleep> \
+[number_of_meals]\n"
+# define ERROR_DIGIT	"%s invalid input: %s: \
+ string must consist of digits\n"
+# define ERROR_MAX_INT	"%s invalid input: %s: \
+ string must not exceed unsigned INT_MAX\n"
+# define ERROR_PHILO	"%s invalid input: \
+there must be between 1 and %s philosophers.\n"
+# define ERROR_TTD	"%s invalid input: \
+<time_to_die> has to be between %s ms.\n"
+# define ERROR_THREAD	"Error: thread creation failed\n"
+# define ERROR_MALLOC	"Error: malloc failed.\n"
+# define ERROR_MUTEX	"Error: mutex creation failed.\n"
+# define DIED 0
+# define EATING 1
+# define SLEEPING 2
+# define THINKING 3
+# define FORK_1 4
+# define FORK_2 5
+
+
+
 
  #endif
