@@ -8,35 +8,10 @@
 # include <stdlib.h>
 # include <sys/time.h>
 
+
+
 typedef struct s_philosopher	t_philosopher;
 
-int	ft_atoi(const char *str)
-{
-	int	i;
-	int	sign;
-	int	res;
-
-	i = 0;
-	sign = 1;
-	res = 0;
-	while ((str[i] >= 9 && str[i] <= 13) || str[i] == ' ')
-	{
-		i++;
-	}
-	if (str[i] == '-' || str[i] == '+')
-	{
-		if (str[i] == '-')
-			sign *= -1;
-		i++;
-	}
-	while (str[i] >= 48 && str[i] <= 57 && str[i])
-	{
-		res = res * 10 + str[i] - 48;
-		i++;
-	}
-	// printf("ATOI %d\n", res * sign);
-	return (res * sign);
-}
 
 
 typedef struct s_data
@@ -71,39 +46,37 @@ typedef struct s_philosopher
 	
 }	t_philosopher;
 
+
+int	ft_isdigit(int c);
+int	ft_atoi(const char *str);
+int	check_args(int	ac, char	**av);
+void	destroy_mutexes(t_data	*data);
+int	finish_simulation(t_data	*data);
+int	simulation_ended(t_data *data);
 int	stop_simulation(t_data *data);
+int free_data(t_data *data);
+t_data	*init_data(int ac, char	**av);
+t_philosopher	**init_philos(t_data *data);
+pthread_mutex_t	*create_forks(t_data *data);
+void	*philo_routine(void *philo);
+void	*one_philo_routine(t_philosopher	*philosopher);
+void	*monitoring_routine(void	*input_data);
+void	eat_sleep_think_routine(t_philosopher	*philosopher);
+int kill_philo(t_philosopher *philosopher);
+void	delay(long long start_time);
 void	alarm_clock_loop(t_data *data, int sleep_time);
-static void	print_status(t_philosopher *philo, char *str);
+long long get_real_time(void);
 void	write_status(t_philosopher *philo, int supervisor_flag, int status);
+int start_simulation(t_data *data);
+void	think_time_calc(t_philosopher *philo, int no_print_wait);
 
-
-
-// MACROS
-
-# define PROG_NAME	"philo"
-# define ERROR_ARGS	"%s invalid input: enter a string of digits only \
-./philo <num_of_philos> \
-<time_to_die> <time_to_eat> <time_to_sleep> \
-[number_of_meals]\n"
-# define ERROR_DIGIT	"%s invalid input: %s: \
- string must consist of digits\n"
-# define ERROR_MAX_INT	"%s invalid input: %s: \
- string must not exceed unsigned INT_MAX\n"
-# define ERROR_PHILO	"%s invalid input: \
-there must be between 1 and %s philosophers.\n"
-# define ERROR_TTD	"%s invalid input: \
-<time_to_die> has to be between %s ms.\n"
-# define ERROR_THREAD	"Error: thread creation failed\n"
-# define ERROR_MALLOC	"Error: malloc failed.\n"
-# define ERROR_MUTEX	"Error: mutex creation failed.\n"
 # define DIED 0
 # define EATING 1
 # define SLEEPING 2
 # define THINKING 3
-# define FORK_1 4
-# define FORK_2 5
-
-
+# define FORK 4
+// # define FORK_1 4
+// # define FORK_2 5
 
 
  #endif
