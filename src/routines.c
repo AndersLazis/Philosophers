@@ -23,6 +23,7 @@ void	*philo_routine(void *philo)
 	{	
 		eat_sleep_think_routine(philosopher);
 		think_time_calc(philosopher, 0);
+		//write_status(philo, 0, THINKING);
 	}
 	return(NULL);	
 }

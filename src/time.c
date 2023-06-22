@@ -30,9 +30,10 @@ long long get_real_time(void)
 void	think_time_calc(t_philosopher *philo, int no_print_wait)
 {
 	long long	time_to_think;
-
+	// no_print_wait = (int)no_print_wait;
 	pthread_mutex_lock(&philo->meal_count_lock);
-	time_to_think = (philo->data->time_to_die - (get_real_time() - philo->last_dinner) - philo->data->time_to_eat) / 2;
+	// time_to_think = (philo->data->time_to_die - (get_real_time() - philo->last_dinner) - philo->data->time_to_eat) / 2;
+	time_to_think = (philo->data->time_to_die - philo->data->time_to_eat - philo->data->time_to_sleep) / 2; // - philo->last_dinner) - philo->data->time_to_eat) / 2;
 	pthread_mutex_unlock(&philo->meal_count_lock);
 	if (time_to_think < 0)
 		time_to_think = 0;
