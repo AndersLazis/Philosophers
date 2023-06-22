@@ -16,9 +16,9 @@ void	*philo_routine(void *philo)
 		return (NULL);
 	if(philosopher->data->num_of_philosophers == 1)
 		return(one_philo_routine(philosopher));
+	write_status(philo, 0, THINKING);
 	if (philosopher->id % 2)
 		think_time_calc(philosopher, 1);
-
 	while(simulation_ended(philosopher->data) == 0)
 	{	
 		eat_sleep_think_routine(philosopher);
@@ -30,7 +30,7 @@ void	*philo_routine(void *philo)
 void	*one_philo_routine(t_philosopher	*philosopher)
 {		
 		pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_right]);
-		write_status(philosopher, 0, FORK_2);
+		write_status(philosopher, 0, FORK);
 		alarm_clock_loop(philosopher->data, philosopher->data->time_to_die);
 		write_status(philosopher, 0, DIED);
 		pthread_mutex_unlock(&philosopher->data->forks[philosopher->fork_right]);	
@@ -61,9 +61,9 @@ void	*monitoring_routine(void	*input_data)
 void	eat_sleep_think_routine(t_philosopher	*philosopher)
 {		
 		pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_left]);
-		write_status(philosopher, 0, FORK_1);
+		write_status(philosopher, 0, FORK);
 		pthread_mutex_lock(&philosopher->data->forks[philosopher->fork_right]);
-		write_status(philosopher, 0, FORK_2);
+		write_status(philosopher, 0, FORK);
 		write_status(philosopher, 0, EATING);
 
 		pthread_mutex_lock(&philosopher->meal_count_lock);
