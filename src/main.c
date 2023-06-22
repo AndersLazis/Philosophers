@@ -18,9 +18,6 @@ void	destroy_mutexes(t_data	*data)
 	}
 
 
-
-
-
 int	finish_simulation(t_data	*data)
 {
 	int i;
@@ -36,8 +33,6 @@ int	finish_simulation(t_data	*data)
 	destroy_mutexes(data);
 	return (0);
 }
-
-
 
 
 int	simulation_ended(t_data *data)
@@ -147,17 +142,6 @@ long long get_real_time(void)
 	gettimeofday(&current_time, NULL);
 	return((current_time.tv_sec * 1000) + (current_time.tv_usec / 1000));
 }
-
-// int is_sim_stop(t_data	*data)
-// {	
-// 	pthread_mutex_lock(&data->flag_stop_sim_lock);
-// 	if(data->flag_stop_sim == 1)
-// 	{	pthread_mutex_unlock(&data->flag_stop_sim_lock);
-// 		return(1);
-// 	}
-// 	pthread_mutex_unlock(&data->flag_stop_sim_lock);
-// 	return(0);
-// }
 
 
 void	eat_sleep_think_routine(t_philosopher	*philosopher)
@@ -393,17 +377,78 @@ int start_simulation(t_data *data)
  	return (1);
 }
 
+int	ft_isdigit(int c)
+{
+	if ((c > 47 && c < 58) ||  c == 43 || c == 45)
+		return (1);
+	else
+		return (0);
+}
+
+int	check_args(int	ac, char	**av)
+{
+	int i;
+	int j;
+
+	i = 1;
+	
+	if(ac != 5 && ac != 6)
+		printf("Error: wrong arguments number.\n");
+	while(av[i])
+	{
+		j = 0;
+		while (av[i][j]!= '\0')
+		{
+			if((!ft_isdigit(av[i][j])) || (ft_atoi(av[i]) < 0) || (ft_atoi(av[i]) > INT_MAX) || (ft_atoi(av[1]) >200 || (ft_atoi(av[2]) < 60)) || (ft_atoi(av[3]) < 60) || (ft_atoi(av[4]) < 60))
+			{
+				printf("Error: invalid arguments.\n");
+				return(0);
+			}
+			// printf("%c\n", av[i][j]);
+			j++;
+		}	
+		i++;
+	}
+	return(1);
+}
+
+int free_data(t_data *data)
+{	
+	int	i;
+	
+	i = 0;
+	while(i < data->num_of_philosophers)
+	{
+		if(data->philosophers[i] != NULL)
+			free(data->philosophers[i]);
+		i++;
+	}
+	if(data->philosophers != NULL)
+		free(data->philosophers);
+	if(data->forks != NULL)
+		free(data->forks);
+	free(data);
+	return(0);
+
+
+
+
+
+}
+
 int main(int ac, char	**av)
 {	
 	printf("===========================ok==========================\n======================ok=========================\n==============ok=======================\n");
 	t_data *data;
 		
-//	+check args
+	if(!check_args(ac, av))
+		return(1);
 	data = init_data(ac, av);
 	if(!data)
 		return(1);
 	if(!start_simulation(data))
 		return (1);
 	finish_simulation(data);
+	free_data(data);
 	return(0);
 }

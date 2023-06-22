@@ -8,10 +8,6 @@
 # include <stdlib.h>
 # include <sys/time.h>
 
-
-
-
-
 typedef struct s_philosopher	t_philosopher;
 
 int	ft_atoi(const char *str)
@@ -38,6 +34,7 @@ int	ft_atoi(const char *str)
 		res = res * 10 + str[i] - 48;
 		i++;
 	}
+	// printf("ATOI %d\n", res * sign);
 	return (res * sign);
 }
 
